@@ -61,6 +61,20 @@ class Gtm extends \Magento\Framework\View\Element\Template
 	 */	  
 	protected $_currency;
 	
+	/**
+	 * Locale
+	 * 
+	 * @var \Magento\Framework\Locale\Format
+	 */	  
+	protected $_locale;
+
+	/**
+	 * Tax Helper
+	 * 
+	 * @var \Magento\Tax\Helper\Data
+	 */	  
+	protected $_tax;
+
     public function __construct(
         \Magento\Backend\Block\Template\Context $context,
         \Chapagain\GoogleTagManager\Helper\Data $helper,
@@ -70,7 +84,9 @@ class Gtm extends \Magento\Framework\View\Element\Template
         \Magento\Sales\Api\Data\OrderInterface $order,
         \Magento\Checkout\Model\Session $checkoutSession,
         \Magento\Catalog\Model\CategoryRepository $categoryRepository,
-        \Magento\Directory\Model\Currency $currency,        
+		\Magento\Directory\Model\Currency $currency, 
+		\Magento\Framework\Locale\Format $locale,
+		\Magento\Tax\Helper\Data $tax,
         array $data = []
     )
     {        
@@ -82,6 +98,8 @@ class Gtm extends \Magento\Framework\View\Element\Template
 		$this->_checkoutSession = $checkoutSession;
 		$this->_categoryRepository = $categoryRepository;
 		$this->_currency = $currency;
+		$this->_locale = $locale;
+		$this->_tax = $tax;
 				
         parent::__construct($context, $data);
     }
@@ -222,7 +240,18 @@ class Gtm extends \Magento\Framework\View\Element\Template
 			$objProduct = new stdClass();
 			$objProduct->name = $product->getName();
 			$objProduct->id = $product->getSku();
-			$objProduct->price = $this->_currency->formatTxt($product->getFinalPrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+
+			//$objProduct->price = $this->_currency->formatTxt($product->getFinalPrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));			
+			/**
+			 * Fix for price for different locale
+			 * 
+			 * For example: 
+			 * Price display of Dutch locale is the opposite of English locale
+			 * English locale price = 1,230.55
+			 * Dutch locale price = 1.230,55
+			 */ 
+			$objProduct->price = (string) $this->_locale->getNumber($product->getFinalPrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+
 			$objProduct->category = implode('|', $categories);
 			
 			$objEcommerce = new stdClass();			
@@ -273,7 +302,18 @@ class Gtm extends \Magento\Framework\View\Element\Template
 				$productItem = array();
 				$productItem['name'] = $item->getName();			  
 				$productItem['id'] = $item->getSku();
-				$productItem['price'] = $this->_currency->formatTxt($item->getBasePrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+
+				//$productItem['price'] = $this->_currency->formatTxt($item->getBasePrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+				/**
+				 * Fix for price for different locale
+				 * 
+				 * For example: 
+				 * Price display of Dutch locale is the opposite of English locale
+				 * English locale price = 1,230.55
+				 * Dutch locale price = 1.230,55
+				 */ 
+				$productItem['price'] = (string) $this->_locale->getNumber($item->getBasePrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+				
 				$productItem['category'] = implode('|', $categories);
 				$productItem['quantity'] = intval($item->getQtyOrdered()); // converting qty from decimal to integer
 				$productItem['coupon'] = '';
@@ -283,7 +323,18 @@ class Gtm extends \Magento\Framework\View\Element\Template
 				$objItem['sku'] = $item->getSku();
 				$objItem['name'] = $item->getName();
 				$objItem['category'] = implode('|', $categories);
-				$objItem['price'] = $this->_currency->formatTxt($item->getBasePrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+				
+				//$objItem['price'] = $this->_currency->formatTxt($item->getBasePrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+				/**
+				 * Fix for price for different locale
+				 * 
+				 * For example: 
+				 * Price display of Dutch locale is the opposite of English locale
+				 * English locale price = 1,230.55
+				 * Dutch locale price = 1.230,55
+				 */ 
+				$objItem['price'] = (string) $this->_locale->getNumber($item->getBasePrice(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+
 				$objItem['quantity'] = intval($item->getQtyOrdered()); // converting qty from decimal to integer
 				$aItems[] = (object) $objItem;
 			}
@@ -292,10 +343,17 @@ class Gtm extends \Magento\Framework\View\Element\Template
 			
 			$objOrder->transactionId = $order->getIncrementId();
 			$objOrder->transactionAffiliation = $this->_storeManager->getStore()->getFrontendName();
-			$objOrder->transactionTotal = $this->_currency->formatTxt($order->getBaseGrandTotal(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
-			$objOrder->transactionTax = $this->_currency->formatTxt($order->getBaseTaxAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
-			$objOrder->transactionShipping = $this->_currency->formatTxt($order->getBaseShippingAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
 			
+			//$objOrder->transactionTotal = $this->_currency->formatTxt($order->getBaseGrandTotal(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			//$objOrder->transactionTax = $this->_currency->formatTxt($order->getBaseTaxAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			//$objOrder->transactionShipping = $this->_currency->formatTxt($order->getBaseShippingAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			/**
+			 * Fix for price for different locale
+			 */ 
+			$objOrder->transactionTotal = (string) $this->_locale->getNumber($order->getBaseGrandTotal(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			$objOrder->transactionTax = (string) $this->_locale->getNumber($order->getBaseTaxAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			$objOrder->transactionShipping = (string) $this->_locale->getNumber($order->getBaseShippingAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+
 			$objOrder->transactionProducts = $aItems;
 						
 			$objOrder->ecommerce = new stdClass();
@@ -303,9 +361,17 @@ class Gtm extends \Magento\Framework\View\Element\Template
 			$objOrder->ecommerce->purchase->actionField = new stdClass();
 			$objOrder->ecommerce->purchase->actionField->id = $order->getIncrementId();
 			$objOrder->ecommerce->purchase->actionField->affiliation = $this->_storeManager->getStore()->getFrontendName();
-			$objOrder->ecommerce->purchase->actionField->revenue = $this->_currency->formatTxt($order->getBaseGrandTotal(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
-			$objOrder->ecommerce->purchase->actionField->tax = $this->_currency->formatTxt($order->getBaseTaxAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
-			$objOrder->ecommerce->purchase->actionField->shipping = $this->_currency->formatTxt($order->getBaseShippingAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			
+			//$objOrder->ecommerce->purchase->actionField->revenue = $this->_currency->formatTxt($order->getBaseGrandTotal(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			//$objOrder->ecommerce->purchase->actionField->tax = $this->_currency->formatTxt($order->getBaseTaxAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			//$objOrder->ecommerce->purchase->actionField->shipping = $this->_currency->formatTxt($order->getBaseShippingAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			/**
+			 * Fix for price for different locale
+			 */ 
+			$objOrder->ecommerce->purchase->actionField->revenue = (string) $this->_locale->getNumber($order->getBaseGrandTotal(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			$objOrder->ecommerce->purchase->actionField->tax = (string) $this->_locale->getNumber($order->getBaseTaxAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+			$objOrder->ecommerce->purchase->actionField->shipping = (string) $this->_locale->getNumber($order->getBaseShippingAmount(), array('display' => \Magento\Framework\Currency::NO_SYMBOL));
+
 			$coupon = $order->getCouponCode();
 			$objOrder->ecommerce->purchase->actionField->coupon = $coupon == null ? '' : $coupon;
 			

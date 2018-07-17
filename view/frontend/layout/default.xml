@@ -1,8 +1,17 @@
 <?xml version="1.0"?>
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">    
-    <body>        
+    <body>
+        <referenceBlock name="head.additional">
+            <block class="Chapagain\GoogleTagManager\Block\Gtm" name="chapagain.gtm" as="gtm" template="Chapagain_GoogleTagManager::gtm.phtml"/>            
+        </referenceBlock>        
         <referenceContainer name="after.body.start">
-            <block class="Chapagain\GoogleTagManager\Block\Gtm" name="chapagain.gtm" as="gtm" template="Chapagain_GoogleTagManager::gtm.phtml"/>
+            <block class="Chapagain\GoogleTagManager\Block\Gtm" name="chapagain.gtm.noscript" as="gtm.noscript" template="Chapagain_GoogleTagManager::noscript.phtml"/>
         </referenceContainer>
+        <!-- 
+        Need to use move tag 
+        as before and after is not allowed in referenceContainer 
+        from Magento 2.2 onwards
+        -->
+        <move element="chapagain.gtm.noscript" destination="after.body.start" before="-" />
     </body>
 </page>

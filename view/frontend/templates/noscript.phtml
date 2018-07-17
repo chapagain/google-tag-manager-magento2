@@ -1,0 +1,11 @@
+<?php 
+$containerId = $block->getContainerId();
+if ($block->getIsEnable()): // if module is enabled
+?>
+
+<!-- Start Google Tag Manager -->		
+	<noscript><iframe src="//www.googletagmanager.com/ns.html?id=<?php echo $containerId ?>"
+	height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager -->		
+
+<?php endif; ?>
